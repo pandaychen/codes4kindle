@@ -1,0 +1,88 @@
+body {
+            text-align: left;
+                        text-align-last: left;
+}
+
+.nav-bar {
+            font-size: 120%;
+                        margin-top: 5px;
+                                        margin-bottom: 5px;
+}
+
+.nav-link {
+            padding-left: 5em;
+                        padding-right: 5em;
+}
+
+ul.toc {
+            line-height: 200%;
+                        font-size: 150%;
+}
+
+code {
+            font-family: consolas, monospace;
+                        line-height: 130%;
+}
+
+span.Constant {
+            color: DarkGreen;
+}
+
+span.Special {
+            color: #c06000;
+}
+
+span.Comment {
+            color: DarkRed;
+                                      font-style: italic;
+}
+
+span.Identifier {
+            color: DarkCyan;
+}
+
+span.PreProc {
+            color: DarkMagenta;
+}
+
+span.Statement, span.Type, span.Keyword, span.Repeat, span.Conditional,
+            span.Operator, span.Exception
+{
+            color: DarkBlue;
+}
+
+span.Todo {
+            color: DarkRed;
+                                      background-color: Gold;
+                                                             font-style: italic;
+}
+
+span.Underlined {
+            text-decoration: underline;
+}
+
+span.linkable {
+            font-weight: bold;
+}
+
+code ol {
+            counter-reset: item;
+                        list-style-type: none;
+                                        margin-left: 0;
+                                                            padding-left: 0;
+                                                                                    list-style-position: inside;
+}
+
+code li {
+            display: block;
+}
+
+code li:before {
+            content: counter(item) "  ";
+                                          counter-increment: item;
+                                                                   color: #999;
+                                                                                                              padding-right: 0.5em;
+                                                                                                                                                      padding-left: 0.4em;
+                                                                                                                                                                                                  list-style-position: inside;
+                                                                                                                                                                                                                                                  text-align: right
+}
