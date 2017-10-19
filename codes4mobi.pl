@@ -1,13 +1,15 @@
 #!/usr/bin/perl -w
 
-#author:pandaychen
+#author:panday.chen
 #date:2016.12.30
 
 use strict;
 use Getopt::Long;
 use Time::Local;
 use POSIX qw(strftime);
-
+use Encode;
+use Data::Dumper;
+#use utf8;
 
 sub test_HERE{
 	my $local = "this ia a mobi generator";
@@ -54,10 +56,12 @@ sub file_convert2utf8{
 		;
 	}
 	elsif($ret =~ /UTF-16/i){
+        print qq(iconv -c -f utf16 -t utf8 $src_filename -o $src_filename),"\n";
 		`iconv -c -f utf16 -t utf8 $src_filename -o $src_filename`;
 	}
 	else {
 		#change to utf8(if chinese)
+        print qq(iconv -c -f gbk -t utf8 $src_filename -o $src_filename),"\n";
 		`iconv -c -f gbk -t utf8 $src_filename -o $src_filename`;
 	}
 	
@@ -178,20 +182,24 @@ sub create_format_orifile{
 	close(FH);
 	
 	###修改文件编码格式
-	
+	print "test:",$src_filename_new_temp,"\n";
 	my $ret=`file $src_filename_new_temp`;
 	chomp($ret);
 	#print $ret,"\n";
-	
+	print "***",$src_filename_new_temp,"\n";
 	if ($ret =~ /UTF-8/i){
 		;
 	}
 	elsif($ret =~ /UTF-16/i){
 		`iconv -c -f utf16 -t utf8 $src_filename_new_temp -o $src_filename_new`;
 	}
-	else {
+	else 
+    {
 		#change to utf8(if chinese)
+        #print   qq(iconv -c -f gbk -t utf8 $src_filename_new_temp -o $src_filename_new),"\n";
 		`iconv -c -f gbk -t utf8 $src_filename_new_temp -o $src_filename_new`;
+        `rm $src_filename_new_temp`;
+        `mv $src_filename_new $src_filename_new_temp`;
 	}
 }
 
@@ -311,6 +319,19 @@ sub create_mobi_html_struct_file{
 	
 	print FH $file_content;
 	close(FH);
+    
+    `mv $html_struct_filename temp.html`;
+    my $file_type=`file ./temp.html`;
+	chomp($file_type);
+	print $file_type,"\n";
+	if ($file_type !~ /utf-8/i){
+		`iconv -c -f gbk -t utf8 temp.html  -o $html_struct_filename`;
+    }
+	else{
+        `cp temp.html toc.html`;
+    }
+	#print qq(iconv -c -f gbk -t utf8 temp.html  -o $html_struct_filename),"\n";
+    #print $html_struct_filename,"\n";
 }
 
 
@@ -359,8 +380,9 @@ sub get_all_project_files{
 	
     	while( my $filename=readdir(DIR)){
 	    	next if $filename eq "." or $filename eq "..";
+            next if $filename eq ".git" or $filename eq ".svn";
 		    my $total_file_name=$cur_dir.$filename;
-
+            print $total_file_name,"\n";
 	    	if ( -d $total_file_name){
 		    	#print "dir:",$total_file_name,"\n";
                 $total_file_name.="/";
@@ -370,19 +392,28 @@ sub get_all_project_files{
 			#if (-T $total_file_name && ($total_file_name=~ /\.c/i || $total_file_name =~ /\.h/i)){
 			#	push @srccode_list,$total_file_name;
 			#}
-			if (-T $total_file_name){
+            my $file_type=`file $total_file_name`;
+            chomp($file_type);
+			if (-T $total_file_name || $file_type =~ /text/i){
+                print "fuck,",$total_file_name,"\n";
 				my $suffix=substr($total_file_name,rindex($total_file_name,'.')+1);
 				if (exists $hash_dict{$suffix}){
 					#print $total_file_name,"\n";
 					push @srccode_list,$total_file_name;
 				}
+                
+                if ($total_file_name =~ /makefile/i || $total_file_name =~ /README/i){
+                    push @srccode_list,$total_file_name;
+                }
+
 			}
 			
 	    }
 
         closedir(DIR);
 	}
-	
+    print Dumper(%hash_dict),"\n";
+	print @srccode_list,"\n";
 	return @srccode_list;
 }
 
@@ -409,8 +440,15 @@ Options:
 	-c | --ca 是否需要生成目录
 	
 	Sample Usage:
+    use this cmd to find suffix:
+        find Libevent/ | awk -F'/' '/^[^.]/{print \$NF}' |awk -F '.' '{print \$2}'|grep -v '^\$'|sort |uniq -c |sort -k1nr
 	1	perl $0 -i ./projectbasedir -s c -s h -o mobifile -a pandaychen -t gbase -ot project.mobi
 	2	perl $0 -i ./projectbasedir -s c -s h -o mobifile -a pandaychen -t gbase -ot project.mobi -c 1 -p prefix.html
+    3   perl codes4mobi.pl -i ./makefile_sample/ -s hpp -s cpp -s sh -s txt -s makefile -s txt -s md -s py -s pl -s pm -s conf -s xml -s json -s c -s h -s makefile -o mobifile -a pandaychen -t makefile -ot makefile.mobi -c 1 -p prefix.html
+
+    3 perl codes4mobi.pl -i ./SimpleSpider  -s lua -s cc -s hh -s cpp -s hpp  -s tex -s sample -s java -s -s proto  -s hpp -s cpp -s sh -s txt -s makefile -s txt -s md -s py -s pl -s pm -s conf -s xml -s json -s c -s h -s makefile -o mobifile -a pandaychen -t SimpleSpider  -ot SimpleSpider.mobi -c 1 -p prefix.html 
+
+
 
 Any Questions,Plz contact ringbuffer\@126.com.
 HERE
@@ -526,6 +564,17 @@ if(!defined $booktitle){
 
 my @file_array=get_all_project_files($input_dir,"./",$file_suffix);
 
+for my $filename (@file_array){
+    print $filename,"\n";
+    `dos2unix $filename`;
+}
+
+#CHANGE NEW NAME
+my $curdate=strftime("%Y%m%d",localtime(time()));
+$booktitle=$curdate.'_'.$booktitle;
+$output_name=$curdate.'_'.$output_name;
+
+#exit(1);
 
 my $ret=open(TOTAL,">$src_filename");
 
@@ -593,6 +642,7 @@ else{
 			qq(</html>);
 	
 	foreach my $file (@file_array){
+        print "file:",$file,"\n";
 		my $fh_ret=open(FH,"<$file");
 		if(!defined $fh_ret){
 			next;
@@ -614,16 +664,24 @@ else{
 		}
 		else{
 			#need catagory
-			
+			print $header,"\n";
 			print TOTAL $header;
-			
+            print "filename_old===>",$file,"\n";
+            #$file=encode("gbk",decode("utf8",$file));
+            print "filename===>",$file,"\n";
 			my $deli_chapter="thefile_".$g_file_counter.$deli.$file.$deli;
+            #print $deli_chapter;
 			print TOTAL "<h2>".$deli_chapter."</h2>";
 			$g_file_counter++;
 			my $temp_chapter=$deli_chapter."#".$g_file_counter;
 			push @catagory_list,$temp_chapter;
 		}
-		
+	    
+       #close(TOTAL);
+       #$fh_ret=open(TOTAL,">>$new_filename");
+        #if(!defined $fh_ret){
+        #   return;
+#}
 		print TOTAL  "\n\n\n\n\n\n\n";
 		
 		while(<FH>){
@@ -647,6 +705,37 @@ else{
 		print TOTAL $tailer;
 		close(TOTAL);
 		close(FH);
+        
+        #########add file encoding
+		
+		#这里分页的文件也需要转成utf8
+        my $ret=`file $new_filename`;
+		
+		my $temp_file="./tmp_html_file_part";
+        #print $new_filename,$temp_file,"\n";
+		if(!defined $ret){
+			return -1;
+		}
+		chomp($ret);
+        #print "fuck,",$ret,"\n";
+		if ($ret =~ /UTF-8/i){
+            print "nothing to do\n";
+			;
+		}
+		elsif($ret =~ /UTF-16/i){
+			#print qq(iconv -c -f utf16 -t utf8 $src_filename -o $src_filename),"\n";
+			`iconv -c -f utf16 -t utf8 $new_filename -o $temp_file`;
+			`rm -f $new_filename`;
+			`mv $temp_file $new_filename`;
+		}
+		else {
+			#change to utf8(if chinese)
+			`iconv -c -f gbk -t utf8 $new_filename -o $temp_file`;
+            print qq(iconv -c -f gbk -t utf8 $new_filename -o $temp_file);
+			`rm -f $new_filename`;
+			`mv $temp_file $new_filename`;
+		}
+    
 	}
 }
 #print $booktitle,$author,$current_date,"\n";
@@ -673,8 +762,11 @@ else{
 		
 		
 		for my $temp (@catagory_list){
+            #print $temp,"\n";
 			my ($chaptername,$chapter_index)=split("#",$temp);
 			#文件编号按照列表来
+
+            #print $chaptername,"\n";
 			$catagory_opf_file_part1.=qq(<item id=\"item${chapter_index}\" media-type=\"application/xhtml+xml\" href=\"mobi_temp_${chapter_index}.html\"></item>).qq(\n);
 			$catagory_opf_file_part2.=qq(<itemref idref=\"item${chapter_index}\"/>).qq(\n);
 			$catagory_ncx_file_part1.= qq(<navPoint class=\"chapter\" id=\"chapter_${chapter_index}\" playOrder=\"${chapter_index}\">).qq(\n).
