@@ -395,7 +395,6 @@ sub get_all_project_files{
             my $file_type=`file $total_file_name`;
             chomp($file_type);
 			if (-T $total_file_name || $file_type =~ /text/i){
-                print "fuck,",$total_file_name,"\n";
 				my $suffix=substr($total_file_name,rindex($total_file_name,'.')+1);
 				if (exists $hash_dict{$suffix}){
 					#print $total_file_name,"\n";
@@ -717,7 +716,6 @@ else{
 			return -1;
 		}
 		chomp($ret);
-        #print "fuck,",$ret,"\n";
 		if ($ret =~ /UTF-8/i){
             print "nothing to do\n";
 			;
@@ -747,7 +745,7 @@ if ($catagory == 0){
 else{
 	#有目录时,也有前言
 	if(defined $prefix_filename){
-		print "here\n";
+
 		$catagory_opf_file_part1 = qq(<item id=\"item0\" media-type=\"application/xhtml+xml\" href=\").$prefix_filename.qq(\"></item>);
 		$catagory_opf_file_part1.="\n";
 		$catagory_opf_file_part2 = qq(<itemref idref=\"item0\"/>);
@@ -762,7 +760,6 @@ else{
 		
 		
 		for my $temp (@catagory_list){
-            #print $temp,"\n";
 			my ($chaptername,$chapter_index)=split("#",$temp);
 			#文件编号按照列表来
 
